@@ -39,7 +39,7 @@ object Firework:
     case w: Waiting => w.next
     case l: Launched => l.next
     case e: Exploding => e.next
-//    case d: Done => d
+    case Done => Done
   }
 
 
@@ -69,7 +69,7 @@ case class Waiting(countDown: Int, startPosition: Point, numberOfParticles: Int,
     if countDown > 0 then
       copy(countDown = countDown - 1)
     else
-      Launched.init(Point(0, 0), 2, Color.red)
+      Launched.init(startPosition, numberOfParticles, particlesColor)
 
 end Waiting
 
@@ -118,10 +118,10 @@ case class Launched(countDown: Int, position: Point, direction: Angle, numberOfP
    */
   def next: Firework =
     if countDown > 0 then
-      copy(countDown = countDown - 1)
-      copy(direction = Angle(direction.toRadians + 1))
+      copy(countDown = countDown - 1,
+           position  = Motion.movePoint(position, direction, Settings.propulsionSpeed))
     else
-      Exploding.init(2, direction, Point(10, 10), Color.red)
+      Exploding.init(numberOfParticles, direction, position, particlesColor)
 
 end Launched
 
@@ -160,9 +160,8 @@ case class Exploding(countDown: Int, particles: Particles) extends Firework:
    */
   def next: Firework =
     if countDown > 0 then
-      copy(countDown = countDown - 1)
-      // TODO particles logic
-      copy(particles = particles.next)
+      copy(countDown = countDown - 1,
+           particles = particles.next)
     else
       Done
 
@@ -216,11 +215,11 @@ case class Particle(horizontalSpeed: Double, verticalSpeed: Double, position: Po
     // value should be the current value minus the gravity, then reduced by
     // air friction
     val updatedVerticalSpeed: Double =
-    3.0
+    Motion.drag(verticalSpeed - Settings.gravity)
     // Particle position is updated according to its new speed
     val updatedPosition = Point(position.x + updatedHorizontalSpeed, position.y + updatedVerticalSpeed)
     // Construct a new particle with the updated position and speed
-    Particle(updatedHorizontalSpeed, updatedVerticalSpeed, updatedPosition, Color.red)
+    Particle(updatedHorizontalSpeed, updatedVerticalSpeed, updatedPosition, color)
 
 end Particle
 
